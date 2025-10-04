@@ -69,7 +69,24 @@ def extract_constraints(text: str):
 def infer_modality_from_path(path: str):
     p = path.lower()
     if p.endswith(('.csv', '.tsv', '.xlsx', '.xls')):
-        return 'tabular'
+        # Load small sample to inspect
+        try:
+            df = pd.read_csv(path, nrows=5) if p.endswith(('.csv', '.tsv')) else pd.read_excel(path, nrows=5)
+            cols_lower = [c.lower() for c in df.columns]
+
+            # Heuristic: time series if column names contain time/timestamp/date
+            if any("time" in c or "timestamp" in c or "date" in c for c in cols_lower):
+                return 'timeseries'
+            
+            # Optionally: detect if values are mostly numeric → tabular
+            numeric_cols = df.select_dtypes(include=np.number).shape[1]
+            if numeric_cols / max(1, len(df.columns)) > 0.5:
+                return 'tabular'
+            
+            return 'tabular'
+        except Exception as e:
+            return 'unknown'
+    
     if p.endswith(('.mat', '.npy', '.npz')):
         return 'maybe-mat'
     if p.endswith(('.gpickle', '.gml', '.edgelist')):
@@ -81,6 +98,7 @@ def infer_modality_from_path(path: str):
     if p.endswith('.json'):
         return 'text'
     return 'unknown'
+
 
 
 def load_metadata(path: str):

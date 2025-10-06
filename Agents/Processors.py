@@ -87,8 +87,6 @@ def infer_modality_from_path(path: str):
         return 'graph'
     if p.endswith(('.wav', '.flac', '.mp3')):
         return 'timeseries'
-    if p.endswith(('.png', '.jpg', '.jpeg', '.bmp', '.tif')):
-        return 'image'
     if p.endswith('.json'):
         return 'text'
     return 'unknown'

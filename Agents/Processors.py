@@ -6,6 +6,7 @@ import numpy as np
 import scipy.io
 import networkx as nx
 import google.generativeai as genai
+from Selector import select_agent
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -69,24 +70,17 @@ def extract_constraints(text: str):
 def infer_modality_from_path(path: str):
     p = path.lower()
     if p.endswith(('.csv', '.tsv', '.xlsx', '.xls')):
-        # Load small sample to inspect
         try:
             df = pd.read_csv(path, nrows=5) if p.endswith(('.csv', '.tsv')) else pd.read_excel(path, nrows=5)
             cols_lower = [c.lower() for c in df.columns]
-
-            # Heuristic: time series if column names contain time/timestamp/date
             if any("time" in c or "timestamp" in c or "date" in c for c in cols_lower):
                 return 'timeseries'
-            
-            # Optionally: detect if values are mostly numeric → tabular
             numeric_cols = df.select_dtypes(include=np.number).shape[1]
             if numeric_cols / max(1, len(df.columns)) > 0.5:
                 return 'tabular'
-            
             return 'tabular'
-        except Exception as e:
+        except:
             return 'unknown'
-    
     if p.endswith(('.mat', '.npy', '.npz')):
         return 'maybe-mat'
     if p.endswith(('.gpickle', '.gml', '.edgelist')):
@@ -98,7 +92,6 @@ def infer_modality_from_path(path: str):
     if p.endswith('.json'):
         return 'text'
     return 'unknown'
-
 
 
 def load_metadata(path: str):
@@ -143,44 +136,16 @@ def infer_supervision(metadata: dict, hints: dict):
 
 
 # ---------------------------
-# Gemini disambiguation
-# ---------------------------
-def gemini_disambiguate(model: str, question: str, candidates: list):
-    prompt = f"""
-You are a helpful assistant extracting dataset info.
-
-Command: {question}
-Candidate paths: {candidates}
-
-Return JSON with:
-  - chosen_path
-  - reason
-"""
-    try:
-        response = genai.GenerativeModel(model).generate_content(prompt)
-        return json.loads(response.text)
-    except Exception as e:
-        return {"error": str(e)}
-
-
-# ---------------------------
-# Build context
+# Processor
 # ---------------------------
 def build_context(user_command: str, model: str):
     parsed = parse_command(user_command)
     constraints = extract_constraints(user_command)
     paths = parsed.get("paths") or []
-
     dataset_metadata = {p: load_metadata(p) for p in paths}
-
-    llm_ans = None
-    if not paths:
-        llm_ans = gemini_disambiguate(model, user_command, [])
 
     modalities = [m.get("modality_hint", "unknown") for m in dataset_metadata.values()]
     modality = modalities[0] if modalities else "unknown"
-
-
     sample_meta = next(iter(dataset_metadata.values()), {})
     supervision = infer_supervision(sample_meta, constraints)
 
@@ -191,20 +156,19 @@ def build_context(user_command: str, model: str):
         "datasets": dataset_metadata,
         "inferred_modality": modality,
         "inferred_supervision": supervision,
-        "llm_disambiguation": llm_ans,
         "notes": "Processor agent output (AD-AGENT design)"
     }
 
 
-# ---------------------------
-# Main entry
-# ---------------------------
 if __name__ == "__main__":
     API_KEY = os.getenv("GEMINI_API_KEY")
     model = setup_gemini(API_KEY)
 
-    # 👉 User enters command
+    # Step 1: Run Processor
     user_cmd = input("Enter your command: ")
+    processor_output = build_context(user_cmd, model)
+    print("\nProcessor Output:\n", json.dumps(processor_output, indent=2))
 
-    context = build_context(user_cmd, model)
-    print(json.dumps(context, indent=2))
+    # Step 2: Run Selector using processor output
+    selection = select_agent(processor_output, model=model)
+    print("\nSelector Output:\n", json.dumps(selection, indent=2))

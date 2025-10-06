@@ -1,6 +1,5 @@
 import os
 import re
-import json
 import pandas as pd
 import numpy as np
 import scipy.io
@@ -10,14 +9,6 @@ from Selector import select_agent
 from dotenv import load_dotenv
 
 load_dotenv()
-
-# ---------------------------
-# Gemini setup
-# ---------------------------
-def setup_gemini(api_key: str, model: str = "gemini-2.5-pro"):
-    genai.configure(api_key=api_key)
-    return model
-
 
 # ---------------------------
 # Parsing and constraints
@@ -155,18 +146,5 @@ def build_context(user_command: str, model: str):
         "inferred_modality": modality,
         "inferred_supervision": supervision,
         "notes": "Processor agent output (AD-AGENT design)"
-    }
+    } 
 
-
-if __name__ == "__main__":
-    API_KEY = os.getenv("GEMINI_API_KEY")
-    model = setup_gemini(API_KEY)
-
-    # Step 1: Run Processor
-    user_cmd = input("Enter your command: ")
-    processor_output = build_context(user_cmd, model)
-    print("\nProcessor Output:\n", json.dumps(processor_output, indent=2))
-
-    # Step 2: Run Selector using processor output
-    selection = select_agent(processor_output, model=model)
-    print("\nSelector Output:\n", json.dumps(selection, indent=2))

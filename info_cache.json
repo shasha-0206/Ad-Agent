@@ -1,0 +1,140 @@
+{
+  "LUNAR": {
+    "timestamp": "2025-10-06T23:02:06.046176",
+    "data": {
+      "model_name": "LUNAR",
+      "library": "pyod",
+      "description": "LUNAR (Locally-based Unsupervised Anomaly Ranking) is a model-free and computationally efficient anomaly detection algorithm. It operates without requiring hyperparameter tuning by leveraging the k-nearest neighbors of data points to calculate an anomaly score. The score is derived from the local density and relationships between a point, its neighbors, and its 'parent' (its closest neighbor that is denser).",
+      "init_parameters": {
+        "n_neighbors": {
+          "type": "int",
+          "default": "5",
+          "description": "Number of neighbors to use for the k-neighbors queries."
+        },
+        "alpha": {
+          "type": "float",
+          "default": "0.5",
+          "description": "The parent-child weight factor. Controls the weighting between a node's own score and its parent's score."
+        },
+        "model_type": {
+          "type": "str",
+          "default": "'WEIGHT'",
+          "description": "The type of model to use. Must be either 'WEIGHT' or 'SCORE'."
+        },
+        "w": {
+          "type": "int",
+          "default": "5",
+          "description": "The number of top-K ranked neighbors to consider for the weight matrix."
+        },
+        "epsilon": {
+          "type": "float",
+          "default": "1e-06",
+          "description": "A small value to prevent division by zero in calculations."
+        },
+        "contamination": {
+          "type": "float",
+          "default": "0.1",
+          "description": "The proportion of outliers in the data set. Used to define the threshold on the decision function."
+        },
+        "n_jobs": {
+          "type": "int",
+          "default": "1",
+          "description": "The number of parallel jobs to run for neighbors search. -1 means using all available processors."
+        }
+      },
+      "attributes": {
+        "decision_scores_": {
+          "type": "numpy.ndarray",
+          "description": "The anomaly score for each training data point. Higher scores indicate a higher likelihood of being an outlier."
+        },
+        "labels_": {
+          "type": "numpy.ndarray",
+          "description": "The binary labels assigned to each training data point after fitting (0 for inlier, 1 for outlier)."
+        },
+        "threshold_": {
+          "type": "float",
+          "description": "The decision threshold on the anomaly scores, calculated based on the 'contamination' parameter."
+        },
+        "top_K_": {
+          "type": "numpy.ndarray",
+          "description": "Indices of the k-nearest neighbors for each sample in the training data."
+        },
+        "top_K_neighbors_": {
+          "type": "numpy.ndarray",
+          "description": "The actual k-nearest neighbor points for each sample in the training data."
+        },
+        "top_K_radius_": {
+          "type": "numpy.ndarray",
+          "description": "The distances to the k-nearest neighbors for each sample in the training data."
+        },
+        "r_": {
+          "type": "numpy.ndarray",
+          "description": "The radius for each sample, calculated as the mean distance to its k-nearest neighbors."
+        },
+        "w_": {
+          "type": "numpy.ndarray",
+          "description": "The computed weight matrix representing the relationships between samples."
+        }
+      }
+    }
+  },
+
+  
+  "DLinear": {
+    "timestamp": "2025-10-06T23:05:18.345988",
+    "data": {
+      "model_name": "DLinear",
+      "library": "tslib",
+      "description": "DLinear is a simple yet surprisingly effective linear model for time series forecasting. It is based on the principle of time series decomposition. The model first decomposes the input time series into a trend component and a seasonal (remainder) component. It then applies a separate, simple linear layer to each component to project them into the future. The final forecast is obtained by summing the outputs of the trend and seasonal models.",
+      "init_parameters": {
+        "seq_len": {
+          "type": "int",
+          "default": "96",
+          "description": "Length of the input sequence (lookback window)."
+        },
+        "pred_len": {
+          "type": "int",
+          "default": "96",
+          "description": "Length of the output sequence to be predicted (forecast horizon)."
+        },
+        "individual": {
+          "type": "bool",
+          "default": "False",
+          "description": "If True, a separate linear layer is applied to each input variable (channel). If False, a single linear layer is shared across all variables."
+        },
+        "enc_in": {
+          "type": "int",
+          "default": "7",
+          "description": "The number of input variables or channels (also referred to as C_in)."
+        },
+        "moving_avg": {
+          "type": "int",
+          "default": "25",
+          "description": "The kernel size of the moving average used in the series decomposition module to extract the trend."
+        }
+      },
+      "attributes": {
+        "decomposition": {
+          "type": "torch.nn.Module",
+          "description": "The series decomposition module (`series_decomp`) responsible for separating the time series into trend and seasonal components."
+        },
+        "Linear_Seasonal": {
+          "type": "torch.nn.Module or torch.nn.ModuleList",
+          "description": "The linear layer(s) applied to the seasonal component of the time series."
+        },
+        "Linear_Trend": {
+          "type": "torch.nn.Module or torch.nn.ModuleList",
+          "description": "The linear layer(s) applied to the trend component of the time series."
+        },
+        "seq_len": {
+          "type": "int",
+          "description": "Stores the input sequence length provided during initialization."
+        },
+        "pred_len": {
+          "type": "int",
+          "description": "Stores the prediction sequence length provided during initialization."
+        }
+      }
+    }
+  }
+}
